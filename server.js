@@ -7,6 +7,7 @@ const consoleTable = require('console.table');
 //connection to sql db
 const connection = mysql.createConnection({
     host: 'localhost',
+    port: 3306,
     user: 'root',
     password: 'mysqlPassword',
     database: 'employee_tracker_db'
@@ -16,6 +17,7 @@ connection.connect(function(err){
     if (err) throw err;
     promptConsole();
 });
+// prompt trying to copy module example lol
 promptConsole = () =>{
     console.log('************************')
     console.log('*                      *')
@@ -26,7 +28,7 @@ promptConsole = () =>{
 };
 
 
-//inquirer prompt
+//prompt the application
 function promptEmployeeTracker(){
     inquirer.prompt({
         name: 'options',
@@ -73,7 +75,7 @@ function promptEmployeeTracker(){
         };
     });
 };
-
+// display employees function
 displayEmployees = () =>  {
     console.log('Displaying all employees...\n');   
     const sql = `SELECT employee.id, 
@@ -94,7 +96,7 @@ displayEmployees = () =>  {
         
     })
 };
-
+// display roles function
 const displayRoles = () => {
     const sql = `SELECT roles.id AS "Roles ID", roles.title AS Roles, roles.salary AS Salary, roles.department_id AS "Department ID" FROM employee_tracker_db.roles`;
     connection.query(
@@ -106,7 +108,7 @@ const displayRoles = () => {
         promptEmployeeTracker();
     })
   }
-
+// display departments function
 displayDepartments = () => {
     const sql = `SELECT department.id AS "Department ID", department.name AS department FROM employee_tracker_db.department`;
 
@@ -121,7 +123,7 @@ displayDepartments = () => {
 };
 
 
-
+// add new employee function
 const addEmployee = async () => {
     connection.query('Select * FROM roles', async (err, roles) => {
         if (err) throw err; 
@@ -131,10 +133,9 @@ const addEmployee = async () => {
     
         managers = managers.map(manager => ({name:manager.first_name + " " + manager.last_name, value: manager.id}));
         managers.push({name:"None"});
-    
-        const responses = await inquirer
-    
-    .prompt([
+    // prompt questions to add new employee
+    const responses = await inquirer
+        .prompt([
         {
             type: 'input',
             name: 'firstname',
@@ -163,7 +164,7 @@ const addEmployee = async () => {
     if (responses.managers === "None") {
         responses.managers = null;
       }
-
+// insert into employee table
     connection.query(
         'INSERT INTO employee SET ?',
         {
@@ -180,8 +181,100 @@ const addEmployee = async () => {
     )
   })
 })
-}
+};
+// add new department
+const addDepartment = async () => {
+    const responses = await inquirer
+    // prompt question for new department
+    .prompt([
+        {
+            name: 'addNewDepartment',
+            type: 'input',
+            message: 'What is the name of the new department?'
+        }
+    ])
+    // insert into department table
+    connection.query(
+        'INSERT INTO employee_tracker_db.department SET ?',
+        { 
+            name: responses.addNewDepartment,
+        },
+        (err) => {
+            if (err) throw err;
+            console.log('New department added!\n')
+            promptEmployeeTracker();
+            }
+       
+    )
+};
+// view departments function to add into add role prompt
+const viewDepartments = () => {
+    return new Promise( (resolve, reject) => {
+    
+      const query = `SELECT * FROM employee_tracker_db.department`;
+      connection.query(
+        query,
+        (err, results) => {
+          if (err) reject(err);
+          resolve(results);
+    })
+  })
+  }
+
+// add a new roles
+const addRole = async () => {
+    // invoke function from view departments
+    const departments = await viewDepartments();
+    const responses = await inquirer
+
+// prompt questions for new roles
+    .prompt([
+        {
+            name: 'title',
+            type: 'input',
+            message: 'What is the name of the new role?'
+        },
+        {
+            name: 'salary',
+            type: 'number',
+            message: 'What is the salary of this role?'
+        },
+        {
+            name: 'department',
+            type: 'list',
+            choices: departments.map(department => department.name),
+            message: 'What department is the role in?'
+           
+        }
+    ])
+
+    departments.forEach(department => {
+        if (department.name === responses.department) {
+        responses.department = department.id;
+        }
+    });
+// insert into roles table
+    connection.query(
+        'INSERT INTO employee_tracker_db.roles SET ?',
+        { 
+            title: responses.title,
+            salary: responses.salary,
+            department_id: responses.department
+        },
+        (err) => {
+            if (err) throw err;
+            console.log('New role added!\n')
+            promptEmployeeTracker();
+            }
+       
+    )
+};
+
+
+
 // function to view departments 
 // function to view roles 
 // function to view employees
-
+// function to add employees using inquirer
+//function to add new department
+//function to add new role
