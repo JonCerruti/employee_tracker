@@ -278,3 +278,5 @@ const addRole = async () => {
 // function to add employees using inquirer
 //function to add new department
 //function to add new role
+
+
